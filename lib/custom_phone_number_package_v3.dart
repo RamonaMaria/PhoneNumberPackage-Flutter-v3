@@ -1,0 +1,96 @@
+library custom_phone_number_package_v3;
+
+import 'package:country_code_picker/country_code_picker.dart';
+import 'package:flutter/material.dart';
+
+class PhoneNumber extends StatefulWidget {
+  final ValueChanged<PhoneNumberObject> onFieldSubmitted;
+  FormFieldValidator<String> validator;
+  final String defaultCountry;
+  final String placeholder;
+  final String message;
+  final TextEditingController controller;
+
+  PhoneNumber(
+      {this.onFieldSubmitted,
+      @required this.defaultCountry,
+      this.validator,
+      this.placeholder,
+      this.message,
+      this.controller});
+
+  @override
+  State<StatefulWidget> createState() => _PhoneNumberState();
+}
+
+class _PhoneNumberState extends State<PhoneNumber> {
+  var data = Map<String, dynamic>();
+  final formKey = GlobalKey<FormState>();
+  PhoneNumberObject _phoneNumber = new PhoneNumberObject();
+
+  @override
+  void initState() {
+    data['country'] = getCountryPrefix(widget.defaultCountry);
+  }
+
+  _PhoneNumberState() {}
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        padding: new EdgeInsets.all(6.0),
+        child: Form(
+            autovalidate: false,
+            key: formKey,
+            child: Center(
+                child: ListView(shrinkWrap: true, children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    flex: 3,
+                    child: CountryCodePicker(
+                      onChanged: (value) {
+                        this.data["country_prefix"] = value.dialCode;
+                      },
+                      initialSelection: getCountryPrefix(widget.defaultCountry),
+                    ),
+                  ),
+                  Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        maxLength: 20,
+                        decoration:
+                            InputDecoration(hintText: widget.placeholder),
+                        keyboardType: TextInputType.phone,
+                        controller: widget.controller,
+                        validator: widget.validator,
+                        onFieldSubmitted: (String value) {
+                          if (formKey.currentState.validate()) {
+                            data['phone_number'] = value;
+                            _phoneNumber.phoneNumber = value;
+                            _phoneNumber.phoneCode =
+                                '+' + data['country'].phoneCode;
+                            widget.onFieldSubmitted(_phoneNumber);
+                          }
+                        },
+                      )),
+                ],
+              ),
+              Text(widget.message),
+            ]))));
+  }
+
+  getCountryPrefix(String countryPrefix) {
+    if (countryPrefix.isEmpty) {
+      Locale myLocale = Localizations.localeOf(context);
+      return myLocale.countryCode;
+    }
+
+    return countryPrefix;
+  }
+}
+
+class PhoneNumberObject {
+  String phoneCode;
+  String phoneNumber;
+}
